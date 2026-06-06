@@ -227,6 +227,9 @@ class Node:
         elif msg_type == "ELECTION":
             self.handle_election(message)
 
+        elif msg_type == "ELECTION_OK":
+            self.handle_election_ok(message)
+
         elif msg_type == "LEADER":
             self.handle_new_leader(message)
 
@@ -347,6 +350,49 @@ def failure_detector(self):
         if not higher_found:
 
             self.become_leader()
+
+    def handle_election_ok(self, message):
+
+        print(
+            f"[{self.node_id}] Higher node exists"
+        )
+
+        self.last_heartbeat = time.time()
+
+    def become_leader(self):
+
+        self.is_leader = True
+
+        self.current_leader = self.node_id
+
+        print(
+            f"[{self.node_id}] ELECTED LEADER"
+        )
+
+        leader_msg = {
+            "type": "LEADER",
+            "leader": self.node_id
+        }
+
+        self.broadcast(
+            leader_msg
+        )
+
+    def handle_new_leader(self, message):
+
+        leader = message["leader"]
+
+        self.current_leader = leader
+
+        self.is_leader = (
+            leader == self.node_id
+        )
+
+        self.last_heartbeat = time.time()
+
+        print(
+            f"[{self.node_id}] New leader = {leader}"
+        )
 
     def handle_election(self, message):
 
