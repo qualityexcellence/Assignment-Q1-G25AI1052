@@ -132,6 +132,59 @@ class Node:
             f"[{self.node_id}] PROMISE -> {proposal_id}"
         )
 
+    def handle_promise(self, message):
+
+        proposal_id = message["proposal_id"]
+
+        sender = message["from"]
+
+        self.promises[
+            proposal_id
+        ].add(sender)
+
+        majority = (
+            len(self.peers) + 1
+        ) // 2 + 1
+
+        count = len(
+            self.promises[
+                proposal_id
+            ]
+        )
+
+        print(
+            f"[{self.node_id}] Promise count={count}"
+        )
+
+        if count < majority:
+            return
+
+        tx = self.pending_transactions.get(
+            proposal_id
+        )
+
+        if not tx:
+            return
+
+        accept = {
+            "type": "ACCEPT",
+            "proposal_id": proposal_id,
+            "transaction": tx,
+            "proposer": self.node_id
+        }
+
+        self.accepted[
+            proposal_id
+        ] = set()
+
+        self.broadcast(
+            accept
+        )
+
+        print(
+            f"[{self.node_id}] ACCEPT broadcast"
+        )
+
     def load_peer_keys(self):
 
         for peer in self.peers:
