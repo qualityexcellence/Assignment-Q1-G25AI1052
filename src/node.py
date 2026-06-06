@@ -89,6 +89,49 @@ class Node:
 
         self.log_file = f"ledger_{self.node_id}.log"
 
+    def handle_prepare(self, message):
+
+        proposal_id = message["proposal_id"]
+
+        proposer = message["proposer"]
+
+        tx = message["transaction"]
+
+        if proposal_id < self.highest_prepare:
+
+            return
+
+        self.highest_prepare = proposal_id
+
+        self.pending_transactions[
+            proposal_id
+        ] = tx
+
+        promise = {
+            "type": "PROMISE",
+            "proposal_id": proposal_id,
+            "from": self.node_id,
+            "accepted_proposal":
+                self.accepted_proposal,
+            "accepted_value":
+                self.accepted_value
+        }
+
+        for peer in self.peers:
+
+            if str(peer["id"]) == proposer:
+
+                self.send_message(
+                    peer["host"],
+                    peer["port"],
+                    promise
+                )
+                break
+
+        print(
+            f"[{self.node_id}] PROMISE -> {proposal_id}"
+        )
+
     def load_peer_keys(self):
 
         for peer in self.peers:
