@@ -173,9 +173,9 @@ class Node:
             "proposer": self.node_id
         }
 
-        self.accepted[
-            proposal_id
-        ] = set()
+        self.accepted[proposal_id] = {
+            self.node_id
+        }
 
         self.broadcast(
             accept
@@ -528,7 +528,9 @@ class Node:
             "proposer": self.node_id
         }
 
-        self.promises[proposal_id] = set()
+        self.promises[proposal_id] = {
+            self.node_id
+        }
 
         self.broadcast(
             prepare
