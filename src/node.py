@@ -185,6 +185,43 @@ class Node:
             f"[{self.node_id}] ACCEPT broadcast"
         )
 
+    def handle_accept(self, message):
+
+        proposal_id = message["proposal_id"]
+
+        tx = message["transaction"]
+
+        proposer = message["proposer"]
+
+        if proposal_id < self.highest_prepare:
+
+            return
+
+        self.accepted_proposal = proposal_id
+
+        self.accepted_value = tx
+
+        accepted = {
+            "type": "ACCEPTED",
+            "proposal_id": proposal_id,
+            "from": self.node_id
+        }
+
+        for peer in self.peers:
+
+            if str(peer["id"]) == proposer:
+
+                self.send_message(
+                    peer["host"],
+                    peer["port"],
+                    accepted
+                )
+                break
+
+        print(
+            f"[{self.node_id}] ACCEPTED"
+        )
+
     def load_peer_keys(self):
 
         for peer in self.peers:
