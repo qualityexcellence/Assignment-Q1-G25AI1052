@@ -253,3 +253,97 @@ class Node:
 
         elif msg_type == "CLIENT_TX":
             self.handle_client_tx(message)
+
+    def heartbeat_loop(self):
+
+        while self.running:
+
+            if self.is_leader:
+
+                heartbeat = {
+                "type": "HEARTBEAT",
+                "leader": self.node_id,
+                "timestamp": time.time()
+            }
+
+            self.broadcast(
+                heartbeat
+            )
+
+        time.sleep(
+            HEARTBEAT_INTERVAL
+        )
+def handle_heartbeat(self, message):
+
+    leader = message.get(
+        "leader"
+    )
+
+    self.current_leader = leader
+
+    self.last_heartbeat = time.time()
+
+    print(
+        f"[{self.node_id}] Heartbeat from leader {leader}"
+    )
+
+def failure_detector(self):
+
+    while self.running:
+
+        if self.is_leader:
+
+            time.sleep(1)
+            continue
+
+        elapsed = (
+            time.time()
+            - self.last_heartbeat
+        )
+
+        if elapsed > ELECTION_TIMEOUT:
+
+            print(
+                f"[{self.node_id}] Leader timeout detected"
+            )
+
+            self.start_election()
+
+        time.sleep(1)
+
+    def start_election(self):
+
+        print(
+            f"[{self.node_id}] Starting election"
+        )
+
+        higher_found = False
+
+        election_msg = {
+            "type": "ELECTION",
+            "candidate": self.node_id
+        }
+
+        my_id = int(
+            self.node_id
+        )
+
+        for peer in self.peers:
+
+            peer_id = int(
+                peer["id"]
+            )
+
+            if peer_id > my_id:
+
+                higher_found = True
+
+                self.send_message(
+                    peer["host"],
+                    peer["port"],
+                    election_msg
+                )
+
+        if not higher_found:
+
+            self.become_leader()
