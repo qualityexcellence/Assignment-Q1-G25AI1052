@@ -347,3 +347,42 @@ def failure_detector(self):
         if not higher_found:
 
             self.become_leader()
+
+    def handle_election(self, message):
+
+        candidate = int(
+            message["candidate"]
+        )
+
+        my_id = int(
+            self.node_id
+        )
+
+        if my_id > candidate:
+
+            reply = {
+                "type": "ELECTION_OK",
+                "node": self.node_id
+            }
+
+            sender = None
+
+            for peer in self.peers:
+
+                if int(peer["id"]) == candidate:
+
+                    sender = peer
+                    break
+
+            if sender:
+
+                self.send_message(
+                    sender["host"],
+                    sender["port"],
+                    reply
+                )
+
+            threading.Thread(
+                target=self.start_election,
+                daemon=True
+            ).start()
