@@ -222,6 +222,55 @@ class Node:
             f"[{self.node_id}] ACCEPTED"
         )
 
+    def handle_accepted(self, message):
+
+        proposal_id = message["proposal_id"]
+
+        sender = message["from"]
+
+        self.accepted[
+            proposal_id
+        ].add(sender)
+
+        majority = (
+            len(self.peers) + 1
+        ) // 2 + 1
+
+        count = len(
+            self.accepted[
+                proposal_id
+            ]
+        )
+
+        print(
+            f"[{self.node_id}] Accepted count={count}"
+        )
+
+        if count < majority:
+            return
+
+        tx = self.pending_transactions.get(
+            proposal_id
+        )
+
+        if not tx:
+            return
+
+        commit = {
+            "type": "PAXOS_COMMIT",
+            "proposal_id": proposal_id,
+            "transaction": tx
+        }
+
+        self.broadcast(
+            commit
+        )
+
+        self.commit_transaction(
+            proposal_id,
+            tx
+        )
+
     def load_peer_keys(self):
 
         for peer in self.peers:
