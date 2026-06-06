@@ -28,6 +28,16 @@ class Node:
         mode=MODE_PAXOS
     ):
 
+        self.highest_prepare = 0
+
+        self.accepted_proposal = None
+
+        self.accepted_value = None
+
+        self.pending_transactions = {}
+
+        self.committed = set()
+
         self.node_id = str(node_id)
 
         self.host = host
