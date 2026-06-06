@@ -466,6 +466,38 @@ class Node:
             proposal_id,
             tx
         )
+
+    def commit_transaction(
+        self,
+        proposal_id,
+        transaction
+    ):
+
+        if proposal_id in self.committed:
+            return
+
+        self.committed.add(
+            proposal_id
+        )
+
+        self.ledger.append(
+            transaction
+        )
+
+        with open(
+            self.log_file,
+            "a"
+        ) as f:
+
+            f.write(
+                json.dumps(
+                    transaction
+                ) + "\n"
+            )
+
+        print(
+            f"[{self.node_id}] COMMITTED {transaction}"
+        )
             
     def handle_client_tx(self, message):
 
