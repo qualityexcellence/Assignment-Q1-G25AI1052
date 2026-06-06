@@ -449,6 +449,24 @@ class Node:
         elif msg_type == "CLIENT_TX":
             self.handle_client_tx(message)
 
+        elif msg_type == "PAXOS_COMMIT":
+            self.handle_paxos_commit(message)
+
+    def handle_paxos_commit(self, message):
+
+        proposal_id = message[
+            "proposal_id"
+        ]
+
+        tx = message[
+            "transaction"
+        ]
+
+        self.commit_transaction(
+            proposal_id,
+            tx
+        )
+            
     def handle_client_tx(self, message):
 
         tx = message["transaction"]
