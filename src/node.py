@@ -257,6 +257,41 @@ class Node:
         elif msg_type == "CLIENT_TX":
             self.handle_client_tx(message)
 
+    def handle_client_tx(self, message):
+
+        tx = message["transaction"]
+
+        if not self.is_leader:
+
+            print(
+                f"[{self.node_id}] Not leader, ignoring tx"
+            )
+            return
+
+        self.proposal_number += 1
+
+        proposal_id = (
+            int(self.node_id) * 100000
+            + self.proposal_number
+        )
+
+        print(
+            f"[{self.node_id}] Starting Paxos for {tx}"
+        )
+
+        prepare = {
+            "type": "PREPARE",
+            "proposal_id": proposal_id,
+            "transaction": tx,
+            "proposer": self.node_id
+        }
+
+        self.promises[proposal_id] = set()
+
+        self.broadcast(
+            prepare
+        )
+
     def heartbeat_loop(self):
 
         while self.running:
