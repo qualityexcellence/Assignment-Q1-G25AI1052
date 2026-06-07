@@ -615,6 +615,80 @@ class Node:
             f"[{self.node_id}] PREPARE {seq}"
         )
 
+    def handle_pbft_prepare(self, message):
+
+        sender = str(
+            message["sender"]
+        )
+
+        if sender not in self.peer_public_keys:
+            return
+
+        public_key = (
+            self.peer_public_keys[
+                sender
+            ]
+        )
+
+        if not PBFTMessage.verify(
+            public_key,
+            message
+        ):
+
+            print(
+                f"[{self.node_id}] Invalid PREPARE signature"
+            )
+
+            return
+
+        seq = message["sequence"]
+
+        self.pbft_prepare[
+            seq
+        ].add(sender)
+
+        prepare_count = len(
+            self.pbft_prepare[
+                seq
+            ]
+        )
+
+        print(
+            f"[{self.node_id}] PREPARE count={prepare_count}"
+        )
+
+        #
+        # PBFT requirement:
+        # n=5
+        # f=1
+        # Need 2f+1 = 3 prepares
+        #
+
+        if prepare_count < 3:
+            return
+
+        commit = PBFTMessage.create_message(
+            "COMMIT",
+            self.node_id,
+            seq,
+            message["payload"]
+        )
+
+        signed_commit = (
+            PBFTMessage.sign(
+                self.private_key,
+                commit
+            )
+        )
+
+        self.broadcast(
+            signed_commit
+        )
+
+        print(
+            f"[{self.node_id}] COMMIT broadcast seq={seq}"
+        )
+
     def handle_paxos_commit(self, message):
 
         proposal_id = message[
@@ -663,7 +737,36 @@ class Node:
         )
 
     def start_paxos(self, transaction):
-        print(f"[{self.node_id}] paxos start {transaction}")
+
+        self.proposal_number += 1
+
+        proposal_id = (
+            int(self.node_id) * 100000
+            + self.proposal_number
+        )
+
+        self.pending_transactions[
+            proposal_id
+        ] = transaction
+
+        self.promises[proposal_id] = {
+            self.node_id
+        }
+
+        prepare = {
+            "type": "PREPARE",
+            "proposal_id": proposal_id,
+            "transaction": transaction,
+            "proposer": self.node_id
+        }
+
+        self.broadcast(
+            prepare
+        )
+
+        print(
+            f"[{self.node_id}] PREPARE {proposal_id}"
+        )
             
     def handle_client_tx(self, message):
 
@@ -715,18 +818,19 @@ class Node:
             if self.is_leader:
 
                 heartbeat = {
-                "type": "HEARTBEAT",
-                "leader": self.node_id,
-                "timestamp": time.time()
-            }
+                    "type": "HEARTBEAT",
+                    "leader": self.node_id,
+                    "timestamp": time.time()
+                }
 
-            self.broadcast(
-                heartbeat
+                self.broadcast(
+                    heartbeat
+                )
+
+            time.sleep(
+                HEARTBEAT_INTERVAL
             )
 
-        time.sleep(
-            HEARTBEAT_INTERVAL
-        )
     def handle_heartbeat(self, message):
 
         leader = message.get(
