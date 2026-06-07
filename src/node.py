@@ -661,6 +661,9 @@ class Node:
         print(
             f"[{self.node_id}] COMMITTED {transaction}"
         )
+
+    def start_paxos(self, transaction):
+        print(f"[{self.node_id}] paxos start {transaction}")
             
     def handle_client_tx(self, message):
 
@@ -880,3 +883,6 @@ def failure_detector(self):
                 target=self.start_election,
                 daemon=True
             ).start()
+
+if __name__ == "__main__":
+    print("Integrated node.py scaffold created.")
