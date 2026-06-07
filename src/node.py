@@ -543,6 +543,23 @@ class Node:
             f"SEQ={sequence}"
         )
 
+    def detect_equivocation(
+        self,
+        sequence,
+        digest
+    ):
+
+        if sequence not in self.pbft_preprepare:
+            return False
+
+        old_digest = (
+            self.pbft_preprepare[
+                sequence
+            ]["digest"]
+        )
+
+        return old_digest != digest
+
     def handle_pre_prepare(self, message):
 
         sender = str(
