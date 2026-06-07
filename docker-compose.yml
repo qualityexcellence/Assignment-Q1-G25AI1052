@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+
+  node1:
+    build: .
+    container_name: node1
+    hostname: node1
+    command: python src/node.py 1
+    volumes:
+      - ./keys:/app/keys
+    ports:
+      - "5001:5001"
+    networks:
+      - consensus-net
+
+  node2:
+    build: .
+    container_name: node2
+    hostname: node2
+    command: python src/node.py 2
+    volumes:
+      - ./keys:/app/keys
+    ports:
+      - "5002:5002"
+    networks:
+      - consensus-net
+
+  node3:
+    build: .
+    container_name: node3
+    hostname: node3
+    command: python src/node.py 3
+    volumes:
+      - ./keys:/app/keys
+    ports:
+      - "5003:5003"
+    networks:
+      - consensus-net
+
+  node4:
+    build: .
+    container_name: node4
+    hostname: node4
+    command: python src/node.py 4
+    volumes:
+      - ./keys:/app/keys
+    ports:
+      - "5004:5004"
+    networks:
+      - consensus-net
+
+  node5:
+    build: .
+    container_name: node5
+    hostname: node5
+    command: python src/node.py 5
+    volumes:
+      - ./keys:/app/keys
+    ports:
+      - "5005:5005"
+    networks:
+      - consensus-net
+
+  adversary:
+    build: .
+    container_name: adversary
+    hostname: adversary
+    command: tail -f /dev/null
+    volumes:
+      - ./keys:/app/keys
+    networks:
+      - consensus-net
+
+  toxiproxy:
+    image: shopify/toxiproxy
+    container_name: toxiproxy
+    ports:
+      - "8474:8474"
+      - "8666:8666"
+    networks:
+      - consensus-net
+
+networks:
+   consensus-net:
+    driver: bridge
