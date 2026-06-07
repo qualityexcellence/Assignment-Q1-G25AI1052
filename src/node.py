@@ -2,6 +2,7 @@ import os
 import json
 import time
 import socket
+import sys
 import threading
 from collections import defaultdict
 
@@ -16,6 +17,14 @@ ELECTION_TIMEOUT = 6
 MODE_PAXOS = "PAXOS"
 MODE_PBFT = "PBFT"
 
+NODES = {
+    "1": ("localhost", 5001),
+    "2": ("localhost", 5002),
+    "3": ("localhost", 5003),
+    "4": ("localhost", 5004),
+    "5": ("localhost", 5005)
+}
+
 
 class Node:
 
@@ -27,6 +36,8 @@ class Node:
         peers,
         mode=MODE_PAXOS
     ):
+
+        self.pbft_commit_sent = set()
 
         self.highest_prepare = 0
 
@@ -989,4 +1000,29 @@ class Node:
             ).start()
 
 if __name__ == "__main__":
-    print("Integrated node.py scaffold created.")
+
+    node_id = sys.argv[1]
+
+    host, port = NODES[node_id]
+
+    peers = []
+
+    for nid, (h, p) in NODES.items():
+
+        if nid != node_id:
+
+            peers.append({
+                "id": nid,
+                "host": h,
+                "port": p
+            })
+
+    node = Node(
+        node_id,
+        host,
+        port,
+        peers,
+        MODE_PAXOS
+    )
+
+    node.start()
