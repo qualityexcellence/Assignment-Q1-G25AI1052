@@ -72,6 +72,18 @@ class Node:
         self.private_path = f"keys/{self.node_id}_private.pem"
         self.public_path = f"keys/{self.node_id}_public.pem"
 
+        # PBFT state
+
+        self.pbft_sequence = 0
+
+        self.pbft_preprepare = {}
+
+        self.pbft_prepare = defaultdict(set)
+
+        self.pbft_commit = defaultdict(set)
+
+        self.pbft_executed = set()
+
         if not os.path.exists(self.private_path):
             CryptoUtils.generate_key_pair(self.node_id)
 
@@ -504,36 +516,42 @@ class Node:
         tx = message["transaction"]
 
         if not self.is_leader:
-
-            print(
-                f"[{self.node_id}] Not leader, ignoring tx"
-            )
             return
 
-        self.proposal_number += 1
+        if self.mode == MODE_PAXOS:
 
-        proposal_id = (
-            int(self.node_id) * 100000
-            + self.proposal_number
+            self.start_paxos(tx)
+
+        elif self.mode == MODE_PBFT:
+
+            self.start_pbft(tx)
+
+    def start_pbft(self, transaction):
+
+        self.pbft_sequence += 1
+
+        seq = self.pbft_sequence
+
+        msg = PBFTMessage.create_message(
+            "PRE_PREPARE",
+            self.node_id,
+            seq,
+            transaction
+        )
+
+        signed_msg = PBFTMessage.sign(
+            self.private_key,
+            msg
+        )
+
+        self.pbft_preprepare[seq] = signed_msg
+
+        self.broadcast(
+            signed_msg
         )
 
         print(
-            f"[{self.node_id}] Starting Paxos for {tx}"
-        )
-
-        prepare = {
-            "type": "PREPARE",
-            "proposal_id": proposal_id,
-            "transaction": tx,
-            "proposer": self.node_id
-        }
-
-        self.promises[proposal_id] = {
-            self.node_id
-        }
-
-        self.broadcast(
-            prepare
+            f"[{self.node_id}] PRE-PREPARE {seq}"
         )
 
     def heartbeat_loop(self):
