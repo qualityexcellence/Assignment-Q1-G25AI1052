@@ -392,7 +392,12 @@ class Node:
 
         while self.running:
 
-            conn, addr = self.server_socket.accept()
+            try:
+
+                conn, addr = self.server_socket.accept()
+
+            except OSError:
+                break
 
             threading.Thread(
                 target=self.handle_connection,
@@ -639,6 +644,12 @@ class Node:
             seq
         ] = message
 
+        self.pbft_prepare[
+            seq
+        ].add(
+            self.node_id
+        )
+
         prepare = PBFTMessage.create_message(
             "PBFT_PREPARE",
             self.node_id,
@@ -668,6 +679,12 @@ class Node:
         )
 
         if sender not in self.peer_public_keys:
+            
+            print(
+                f"[{self.node_id}] Unknown sender {sender}"
+            )
+
+            
             return
 
         public_key = (
@@ -722,6 +739,19 @@ class Node:
         self.pbft_commit_sent.add(
             seq
         )
+
+        #
+        # Count our own COMMIT
+        #
+        self.pbft_commit[
+            seq
+        ].add(
+            self.node_id
+        )
+
+        #
+        # Create COMMIT message
+        #
 
         commit = PBFTMessage.create_message(
             "COMMIT",
