@@ -1,4 +1,2 @@
 cryptography==45.0.3
-grpcio==1.74.0
-grpcio-tools==1.74.0
-protobuf==6.31.1
+pytest>=8.0.0
