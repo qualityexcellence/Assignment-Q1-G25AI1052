@@ -464,6 +464,61 @@ class Node:
         elif msg_type == "PAXOS_COMMIT":
             self.handle_paxos_commit(message)
 
+    def handle_pre_prepare(self, message):
+
+        sender = str(
+            message["sender"]
+        )
+
+        if sender not in self.peer_public_keys:
+            return
+
+        public_key = (
+            self.peer_public_keys[
+                sender
+            ]
+        )
+
+        valid = PBFTMessage.verify(
+            public_key,
+            message
+        )
+
+        if not valid:
+
+            print(
+                f"[{self.node_id}] INVALID SIGNATURE"
+            )
+            return
+
+        seq = message["sequence"]
+
+        self.pbft_preprepare[
+            seq
+        ] = message
+
+        prepare = PBFTMessage.create_message(
+            "PBFT_PREPARE",
+            self.node_id,
+            seq,
+            message["payload"]
+        )
+
+        signed_prepare = (
+            PBFTMessage.sign(
+                self.private_key,
+                prepare
+            )
+        )
+
+        self.broadcast(
+            signed_prepare
+        )
+
+        print(
+            f"[{self.node_id}] PREPARE {seq}"
+        )
+
     def handle_paxos_commit(self, message):
 
         proposal_id = message[
