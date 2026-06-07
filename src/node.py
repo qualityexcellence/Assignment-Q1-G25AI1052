@@ -165,6 +165,16 @@ class Node:
             proposal_id
         ].add(sender)
 
+        print(
+            f"[{self.node_id}] Promise received from {sender}"
+        )
+
+        print(
+            self.promises[
+                proposal_id
+            ]
+        )
+
         majority = (
             len(self.peers) + 1
         ) // 2 + 1
@@ -474,6 +484,10 @@ class Node:
 
     def process_message(self, message):
 
+        print(
+            f"[{self.node_id}] RECEIVED {message.get('type')}"
+        )
+
         msg_type = message.get("type")
 
         if msg_type == "HEARTBEAT":
@@ -522,6 +536,11 @@ class Node:
         )
 
         if sender not in self.peer_public_keys:
+            
+            print(
+                f"[{self.node_id}] Unknown sender {sender}"
+            )
+
             return
 
         public_key = (
@@ -534,6 +553,11 @@ class Node:
             public_key,
             message
         ):
+            
+            print(
+                f"[{self.node_id}] Invalid COMMIT signature"
+            )
+            
             return
 
         seq = message["sequence"]
@@ -953,6 +977,8 @@ class Node:
                     f"[{self.node_id}] Leader timeout detected"
                 )
 
+                self.last_heartbeat = time.time()
+
                 self.start_election()
 
             time.sleep(1)
@@ -963,8 +989,6 @@ class Node:
             f"[{self.node_id}] Starting election"
         )
 
-        higher_found = False
-
         election_msg = {
             "type": "ELECTION",
             "candidate": self.node_id
@@ -973,6 +997,8 @@ class Node:
         my_id = int(
             self.node_id
         )
+
+        higher_found = False
 
         for peer in self.peers:
 
@@ -993,6 +1019,18 @@ class Node:
         if not higher_found:
 
             self.become_leader()
+            return
+
+        time.sleep(
+            ELECTION_TIMEOUT
+        )
+
+        if (
+            time.time()
+            - self.last_heartbeat
+            > ELECTION_TIMEOUT
+        ):
+            self.become_leader()
 
     def handle_election_ok(self, message):
 
@@ -1004,9 +1042,14 @@ class Node:
 
     def become_leader(self):
 
+        if self.is_leader:
+            return
+
         self.is_leader = True
 
         self.current_leader = self.node_id
+
+        self.last_heartbeat = time.time()
 
         print(
             f"[{self.node_id}] ELECTED LEADER"
