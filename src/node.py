@@ -727,43 +727,43 @@ class Node:
         time.sleep(
             HEARTBEAT_INTERVAL
         )
-def handle_heartbeat(self, message):
+    def handle_heartbeat(self, message):
 
-    leader = message.get(
-        "leader"
-    )
-
-    self.current_leader = leader
-
-    self.last_heartbeat = time.time()
-
-    print(
-        f"[{self.node_id}] Heartbeat from leader {leader}"
-    )
-
-def failure_detector(self):
-
-    while self.running:
-
-        if self.is_leader:
-
-            time.sleep(1)
-            continue
-
-        elapsed = (
-            time.time()
-            - self.last_heartbeat
+        leader = message.get(
+            "leader"
         )
 
-        if elapsed > ELECTION_TIMEOUT:
+        self.current_leader = leader
 
-            print(
-                f"[{self.node_id}] Leader timeout detected"
+        self.last_heartbeat = time.time()
+
+        print(
+            f"[{self.node_id}] Heartbeat from leader {leader}"
+        )
+
+    def failure_detector(self):
+
+        while self.running:
+
+            if self.is_leader:
+
+                time.sleep(1)
+                continue
+
+            elapsed = (
+                time.time()
+                - self.last_heartbeat
             )
 
-            self.start_election()
+            if elapsed > ELECTION_TIMEOUT:
 
-        time.sleep(1)
+                print(
+                    f"[{self.node_id}] Leader timeout detected"
+                )
+
+                self.start_election()
+
+            time.sleep(1)
 
     def start_election(self):
 
