@@ -329,8 +329,43 @@ class Node:
             daemon=True
         ).start()
 
+        #
+        # Initial leader election
+        #
+        threading.Thread(
+            target=self.start_election,
+            daemon=True
+        ).start()
+
+        print(
+            f"[{self.node_id}] Node started"
+        )
+
+        #
+        # Keep process alive
+        #
         while self.running:
-            time.sleep(1)
+
+            try:
+
+                time.sleep(1)
+
+            except KeyboardInterrupt:
+
+                print(
+                    f"[{self.node_id}] Shutting down..."
+                )
+
+                self.running = False
+
+                if self.server_socket:
+
+                    try:
+                        self.server_socket.close()
+                    except:
+                        pass
+
+                break
 
     def server_loop(self):
 
@@ -678,12 +713,24 @@ class Node:
         if prepare_count < 3:
             return
 
+        #
+        # Prevent COMMIT storms
+        #
+        if seq in self.pbft_commit_sent:
+            return
+
+        self.pbft_commit_sent.add(
+            seq
+        )
+
         commit = PBFTMessage.create_message(
             "COMMIT",
             self.node_id,
             seq,
             message["payload"]
         )
+
+        
 
         signed_commit = (
             PBFTMessage.sign(
