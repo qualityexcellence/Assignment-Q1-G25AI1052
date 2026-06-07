@@ -464,6 +464,85 @@ class Node:
         elif msg_type == "PAXOS_COMMIT":
             self.handle_paxos_commit(message)
 
+    def handle_commit(self, message):
+
+        sender = str(
+            message["sender"]
+        )
+
+        if sender not in self.peer_public_keys:
+            return
+
+        public_key = (
+            self.peer_public_keys[
+                sender
+            ]
+        )
+
+        if not PBFTMessage.verify(
+            public_key,
+            message
+        ):
+            return
+
+        seq = message["sequence"]
+
+        self.pbft_commit[
+            seq
+        ].add(sender)
+
+        commit_count = len(
+            self.pbft_commit[
+                seq
+            ]
+        )
+
+        if commit_count < 3:
+            return
+
+        if seq in self.pbft_executed:
+            return
+
+        self.pbft_executed.add(
+            seq
+        )
+
+        self.commit_pbft_transaction(
+            seq,
+            message["payload"]
+        )
+
+    def commit_pbft_transaction(
+        self,
+        sequence,
+        transaction
+    ):
+
+        self.ledger.append(
+            transaction
+        )
+
+        with open(
+            self.log_file,
+            "a"
+        ) as f:
+
+            f.write(
+                json.dumps(
+                    {
+                        "sequence":
+                            sequence,
+                        "tx":
+                            transaction
+                    }
+                ) + "\n"
+            )
+
+        print(
+            f"[{self.node_id}] PBFT COMMITTED "
+            f"SEQ={sequence}"
+        )
+
     def handle_pre_prepare(self, message):
 
         sender = str(
