@@ -1,4 +1,4 @@
-from crypto_utils import CryptoUtils, PBFTMessage
+from src.crypto_utils import CryptoUtils, PBFTMessage
 
 priv, pub = CryptoUtils.generate_key_pair("node1")
 
